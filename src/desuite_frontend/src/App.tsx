@@ -1,22 +1,51 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import LandingPage from './components/LandingPage';
-import UserManagement from './components/UserManagement';
-import Dashboard from './components/Dashboard';
-import './animations/animations.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Navbar } from './components/Navbar';
+import { Landing } from './pages/Landing';
+import { Login } from './pages/auth/Login';
+import { Register } from './pages/auth/Register';
+import { Dashboard } from './pages/Dashboard';
+import { Space } from './pages/Space';
+import { CreateSpace } from './pages/CreateSpace';
+import { Tasks } from './pages/Tasks';
+import { Profile } from './pages/Profile';
+import { Leaderboard } from './pages/Leaderboard';
 
-function App() {
+// Protected Route Wrapper
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+};
+
+const App = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/register" element={<UserManagement />} />
-        <Route path="/login" element={<UserManagement />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        {/* Add more routes as needed */}
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          {/* Protected Routes */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <Navbar />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/spaces/:spaceId" element={<Space />} />
+            <Route path="/spaces/create" element={<CreateSpace />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
-}
+};
 
 export default App;
