@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { desuite_backend } from '../../../declarations/desuite_backend';
-import { Loader2, Calendar, Users, AlertCircle, X, Plus } from 'lucide-react';
+import { Loader2, AlertCircle, X, Plus } from 'lucide-react';
 import { TaskType, TaskVisibility } from '../../../declarations/desuite_backend/desuite_backend.did';
 
 interface TaskForm {

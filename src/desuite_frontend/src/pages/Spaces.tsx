@@ -10,8 +10,7 @@ import {
   Lock, 
   Unlock, 
   ArrowRight,
-  Loader2,
-  Filter
+  Loader2
 } from 'lucide-react';
 
 // Types for type safety

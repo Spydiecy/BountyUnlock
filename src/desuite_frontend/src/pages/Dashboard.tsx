@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { desuite_backend } from '../../../declarations/desuite_backend';
-import { Principal } from '@dfinity/principal';
 import { Layout as LayoutIcon, Plus, Award, Users, Activity, Loader2 } from 'lucide-react';
 
 interface Space {
