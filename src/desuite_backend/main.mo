@@ -129,8 +129,20 @@ shared actor class Zealy() = {
     };
 
     private func validateEmail(email: Text) : Bool {
-        let pattern = #text("^[^@]+@[^@]+\\.[^@]+$");
-        Text.contains(email, pattern);
+        let emailPattern = #text("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+        
+        // More permissive validation for development
+        let hasAtSymbol = Text.contains(email, #text("@"));
+        let hasDot = Text.contains(email, #text("."));
+        let parts = Text.split(email, #text("@"));
+        let beforeAt = Text.join("", parts);
+        
+        // Basic validation
+        if (beforeAt.size() < 1) { return false; };
+        if (not hasAtSymbol or not hasDot) { return false; };
+        if (Text.contains(email, #text("..")) or Text.contains(email, #text(".@")) or Text.contains(email, #text("@."))) { return false; };
+        
+        true
     };
 
     // Public functions
@@ -438,6 +450,127 @@ shared actor class Zealy() = {
             };
             case null { #err("Task not found"); };
         };
+    };
+
+    // Get all submissions for a specific task
+    public query func getAllTaskSubmissions(taskId: Text) : async Result.Result<[TaskSubmission], Text> {
+        let allSubmissions = Iter.toArray(submissions.vals());
+        let taskSubmissions = Array.filter(allSubmissions, func(sub: TaskSubmission) : Bool {
+            sub.taskId == taskId
+        });
+        #ok(taskSubmissions)
+    };
+
+    // Review a task submission
+    public shared(msg) func reviewTaskSubmission(
+        submissionId: Text,
+        approved: Bool,
+        notes: ?Text
+    ) : async Result.Result<TaskSubmission, Text> {
+        let caller = msg.caller;
+
+        switch (submissions.get(submissionId)) {
+            case (null) { #err("Submission not found") };
+            case (?submission) {
+                switch (tasks.get(submission.taskId)) {
+                    case (null) { #err("Task not found") };
+                    case (?task) {
+                        // Verify reviewer is task creator
+                        if (task.creatorId != caller) {
+                            return #err("Only task creator can review submissions");
+                        };
+
+                        // Verify submission is pending
+                        switch (submission.status) {
+                            case (#pending) {};
+                            case (_) {
+                                return #err("Submission is not pending review");
+                            };
+                        };
+
+                        // Update submission
+                        let updatedSubmission : TaskSubmission = {
+                            id = submission.id;
+                            taskId = submission.taskId;
+                            spaceId = submission.spaceId;
+                            userId = submission.userId;
+                            proof = submission.proof;
+                            submittedAt = submission.submittedAt;
+                            status = if (approved) #approved else #rejected;
+                            reviewerNotes = notes;
+                            reviewerId = ?caller;
+                            reviewedAt = ?Time.now();
+                        };
+
+                        submissions.put(submissionId, updatedSubmission);
+
+                        // If approved, award points to user
+                        if (approved) {
+                            switch (users.get(submission.userId)) {
+                                case (?user) {
+                                    let updatedUser = {
+                                        user with
+                                        points = user.points + task.points;
+                                    };
+                                    users.put(submission.userId, updatedUser);
+                                };
+                                case (null) {};
+                            };
+
+                            // Update task stats if needed
+                            let updatedTask = {
+                                task with
+                                currentSubmissions = task.currentSubmissions + 1;
+                            };
+                            tasks.put(task.id, updatedTask);
+                        };
+
+                        #ok(updatedSubmission);
+                    };
+                };
+            };
+        };
+    };
+
+    // Optional: Add helper function to get task submission count
+    public query func getTaskSubmissionStats(taskId: Text) : async Result.Result<{
+        total: Nat;
+        approved: Nat;
+        pending: Nat;
+        rejected: Nat;
+    }, Text> {
+        let allSubmissions = Iter.toArray(submissions.vals());
+        let taskSubmissions = Array.filter(allSubmissions, func(sub: TaskSubmission) : Bool {
+            sub.taskId == taskId
+        });
+
+        let approved = Array.filter(taskSubmissions, func(sub: TaskSubmission) : Bool {
+            switch(sub.status) {
+                case (#approved) { true };
+                case (_) { false };
+            };
+        }).size();
+
+        let pending = Array.filter(taskSubmissions, func(sub: TaskSubmission) : Bool {
+            switch(sub.status) {
+                case (#pending) { true };
+                case (_) { false };
+            };
+        }).size();
+
+        let rejected = Array.filter(taskSubmissions, func(sub: TaskSubmission) : Bool {
+            switch(sub.status) {
+                case (#rejected) { true };
+                case (_) { false };
+            };
+        }).size();
+
+        #ok({
+            total = taskSubmissions.size();
+            approved = approved;
+            pending = pending;
+            rejected = rejected;
+        });
     };
 
     // System pre-upgrade and post-upgrade

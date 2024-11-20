@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Navbar } from '../components/Navbar';
 import { desuite_backend } from '../../../declarations/desuite_backend';
-import { Layout as LayoutIcon, Plus, Award, Users, Activity } from 'lucide-react';
+import { Principal } from '@dfinity/principal';
+import { Layout as LayoutIcon, Plus, Award, Users, Activity, Loader2 } from 'lucide-react';
 
 interface Space {
   id: string;
   name: string;
   description: string;
   members: string[];
+  adminId: string;
+  categories: string[];
   isPublic: boolean;
 }
 
@@ -17,8 +19,9 @@ interface Task {
   id: string;
   title: string;
   description: string;
-  points: number;
-  status: string;
+  points: bigint;
+  status: { [key: string]: null };
+  createdAt: bigint;
 }
 
 export const Dashboard = () => {
@@ -26,20 +29,46 @@ export const Dashboard = () => {
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        // Fetch user's spaces and active tasks
-        const spaceResults = await desuite_backend.getSpaceTasks(user?.spaces || []);
-        const tasksResults = await Promise.all(
-          user?.spaces.map(spaceId => desuite_backend.getSpaceTasks(spaceId)) || []
-        );
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
 
-        setSpaces(spaceResults);
-        setTasks(tasksResults.flat());
+      try {
+        // Fetch all spaces
+        const allSpacesResult = await desuite_backend.getAllSpaces();
+        // Filter spaces where user is a member
+        const userSpaces = allSpacesResult.filter(space => 
+          space.members.some(member => 
+            member.toString() === user.id
+          )
+        );
+        
+        setSpaces(userSpaces.map(space => ({
+          id: space.id,
+          name: space.name,
+          description: space.description,
+          members: space.members.map(member => member.toString()),
+          adminId: space.adminId.toString(),
+          categories: space.categories,
+          isPublic: space.isPublic
+        })));
+
+        // Fetch tasks for each space
+        const allTasks = [];
+        for (const space of userSpaces) {
+          const spaceTasks = await desuite_backend.getSpaceTasks(space.id);
+          allTasks.push(...spaceTasks);
+        }
+        setTasks(allTasks);
+
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        setError('Failed to load dashboard data');
       } finally {
         setIsLoading(false);
       }
@@ -48,9 +77,20 @@ export const Dashboard = () => {
     fetchData();
   }, [user]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <Loader2 className="animate-spin text-purple-500 mr-2" size={24} />
+        <span>Loading dashboard...</span>
+      </div>
+    );
+  }
+
+  const activeTasks = tasks.filter(task => 'active' in task.status).length;
+  const totalMembers = spaces.reduce((acc, space) => acc + space.members.length, 0);
+
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-20">
         {/* Welcome Section */}
         <div className="mb-8">
@@ -65,8 +105,8 @@ export const Dashboard = () => {
           {[
             { label: 'Total Points', value: user?.points || 0, icon: Award },
             { label: 'Active Spaces', value: spaces.length, icon: LayoutIcon },
-            { label: 'Pending Tasks', value: tasks.length, icon: Activity },
-            { label: 'Total Submissions', value: '12', icon: Users }, // Replace with actual data
+            { label: 'Active Tasks', value: activeTasks, icon: Activity },
+            { label: 'Total Members', value: totalMembers, icon: Users },
           ].map((stat, index) => (
             <div
               key={index}
@@ -107,12 +147,32 @@ export const Dashboard = () => {
               >
                 <h3 className="text-lg font-semibold mb-2">{space.name}</h3>
                 <p className="text-gray-400 text-sm mb-4">{space.description}</p>
-                <div className="flex items-center text-sm text-gray-400">
-                  <Users size={16} className="mr-2" />
-                  {space.members.length} members
+                <div className="flex items-center justify-between text-sm text-gray-400">
+                  <div className="flex items-center">
+                    <Users size={16} className="mr-2" />
+                    {space.members.length} members
+                  </div>
+                  {!space.isPublic && (
+                    <span className="px-2 py-1 rounded-full text-xs bg-purple-500/20">
+                      Private
+                    </span>
+                  )}
                 </div>
               </Link>
             ))}
+
+            {spaces.length === 0 && !isLoading && (
+              <div className="col-span-3 text-center py-12">
+                <p className="text-gray-400 mb-4">No spaces yet</p>
+                <Link
+                  to="/spaces/create"
+                  className="inline-flex items-center px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-300"
+                >
+                  <Plus size={18} className="mr-2" />
+                  Create Your First Space
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
@@ -131,16 +191,32 @@ export const Dashboard = () => {
                     <p className="text-gray-400 text-sm">{task.description}</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-purple-400 font-semibold">{task.points} points</span>
-                    <span className="ml-2 px-2 py-1 rounded-full text-xs bg-purple-500/20 text-purple-400">
-                      {task.status}
+                    <span className="text-purple-400 font-semibold">{Number(task.points)} points</span>
+                    <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                      'active' in task.status 
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-purple-500/20 text-purple-400'
+                    }`}>
+                      {Object.keys(task.status)[0]}
                     </span>
                   </div>
                 </div>
               </div>
             ))}
+
+            {tasks.length === 0 && !isLoading && (
+              <div className="text-center py-12 text-gray-400">
+                No tasks available
+              </div>
+            )}
           </div>
         </div>
+
+        {error && (
+          <div className="mt-4 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );

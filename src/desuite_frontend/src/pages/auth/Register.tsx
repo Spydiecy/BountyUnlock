@@ -16,29 +16,71 @@ export const Register = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const validateUsername = (username: string): boolean => {
+    return username.length >= 3;
+  };
+
+  const validatePassword = (password: string): boolean => {
+    return password.length >= 6;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+      e.preventDefault();
+      setError('');
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
+      // Frontend validations
+      if (!validateUsername(username)) {
+        setError('Username must be at least 3 characters long');
+        return;
+      }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
+      if (!validateEmail(email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
 
-    setIsLoading(true);
+      if (!validatePassword(password)) {
+        setError('Password must be at least 6 characters');
+        return;
+      }
 
-    try {
-      await register(username, email, password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
-    } finally {
-      setIsLoading(false);
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+
+      setIsLoading(true);
+
+      try {
+        console.log('Attempting registration with:', { username, email }); // Debug log
+        await register(username, email, password);
+        navigate('/dashboard');
+      } catch (err) {
+        console.error('Registration error:', err); // Debug log
+        let errorMessage = 'Registration failed';
+        if (err instanceof Error) {
+          console.log('Error message:', err.message); // Debug log
+          errorMessage = err.message.includes("Invalid email format") 
+            ? "Please enter a valid email address" 
+            : err.message.replace('Rejected: ', '');
+        }
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+  };
+
+  const validateEmail = (email: string): boolean => {
+      // Simple but effective email validation
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return emailRegex.test(email);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    // Clear error when user starts typing again
+    if (error.includes('email')) {
+      setError('');
     }
   };
 
@@ -67,9 +109,14 @@ export const Register = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-black/50 border border-purple-500/30 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  className={`w-full px-4 py-3 rounded-lg bg-black/50 border ${
+                    error.includes('Username') 
+                      ? 'border-red-500' 
+                      : 'border-purple-500/30'
+                  } text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500`}
                   placeholder="Choose a username"
                   required
+                  minLength={3}
                 />
               </div>
 
@@ -80,11 +127,20 @@ export const Register = () => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-black/50 border border-purple-500/30 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  onChange={handleEmailChange}
+                  className={`w-full px-4 py-3 rounded-lg bg-black/50 border ${
+                    error.includes('email') 
+                      ? 'border-red-500' 
+                      : 'border-purple-500/30'
+                  } text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500`}
                   placeholder="Enter your email"
                   required
                 />
+                {error.includes('email') && (
+                  <p className="text-red-500 text-xs mt-1">
+                    Please enter a valid email address
+                  </p>
+                )}
               </div>
 
               <div>
@@ -96,9 +152,14 @@ export const Register = () => {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg bg-black/50 border border-purple-500/30 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    className={`w-full px-4 py-3 rounded-lg bg-black/50 border ${
+                      error.includes('Password') 
+                        ? 'border-red-500' 
+                        : 'border-purple-500/30'
+                    } text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500`}
                     placeholder="Create a password"
                     required
+                    minLength={6}
                   />
                   <button
                     type="button"
@@ -118,14 +179,18 @@ export const Register = () => {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-black/50 border border-purple-500/30 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  className={`w-full px-4 py-3 rounded-lg bg-black/50 border ${
+                    error.includes('match') 
+                      ? 'border-red-500' 
+                      : 'border-purple-500/30'
+                  } text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500`}
                   placeholder="Confirm your password"
                   required
                 />
               </div>
 
               {error && (
-                <div className="text-red-500 text-sm text-center">
+                <div className="text-red-500 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-lg p-2">
                   {error}
                 </div>
               )}

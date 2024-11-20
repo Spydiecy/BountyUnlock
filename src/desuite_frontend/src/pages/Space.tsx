@@ -4,7 +4,51 @@ import { useAuth } from '../context/AuthContext';
 import { Navbar } from '../components/Navbar';
 import { desuite_backend } from '../../../declarations/desuite_backend';
 import { Users, Settings, Award, Plus, Calendar, ArrowRight, ExternalLink } from 'lucide-react';
+import { Principal } from '@dfinity/principal';
 
+// Backend types
+type TaskStatus = {
+  'active': null;
+} | {
+  'paused': null;
+} | {
+  'expired': null;
+} | {
+  'archived': null;
+};
+
+interface BackendTask {
+  id: string;
+  spaceId: string;
+  title: string;
+  description: string;
+  points: bigint;
+  taskType: { [key: string]: null };
+  category: string;
+  createdAt: bigint;
+  deadline: [] | [bigint];
+  status: TaskStatus;
+  creatorId: Principal;
+  maxSubmissions: bigint;
+  currentSubmissions: bigint;
+  requirements: string[];
+  visibility: { [key: string]: null };
+}
+
+interface BackendSpace {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: bigint;
+  adminId: Principal;
+  logo: [] | [string];
+  banner: [] | [string];
+  members: Principal[];
+  categories: string[];
+  isPublic: boolean;
+}
+
+// Frontend types
 interface Task {
   id: string;
   title: string;
@@ -12,8 +56,8 @@ interface Task {
   points: number;
   status: string;
   taskType: string;
-  createdAt: bigint;
-  deadline: bigint | null;
+  createdAt: number;
+  deadline: number | null;
   visibility: string;
 }
 
@@ -25,7 +69,32 @@ interface Space {
   adminId: string;
   categories: string[];
   isPublic: boolean;
+  createdAt: number;
 }
+
+// Helper functions
+const transformTask = (backendTask: BackendTask): Task => ({
+  id: backendTask.id,
+  title: backendTask.title,
+  description: backendTask.description,
+  points: Number(backendTask.points),
+  status: Object.keys(backendTask.status)[0],
+  taskType: Object.keys(backendTask.taskType)[0],
+  createdAt: Number(backendTask.createdAt),
+  deadline: backendTask.deadline.length > 0 ? Number(backendTask.deadline[0]) : null,
+  visibility: Object.keys(backendTask.visibility)[0]
+});
+
+const transformSpace = (backendSpace: BackendSpace): Space => ({
+  id: backendSpace.id,
+  name: backendSpace.name,
+  description: backendSpace.description,
+  members: backendSpace.members.map(p => p.toString()),
+  adminId: backendSpace.adminId.toString(),
+  categories: backendSpace.categories,
+  isPublic: backendSpace.isPublic,
+  createdAt: Number(backendSpace.createdAt)
+});
 
 export const Space = () => {
   const { spaceId } = useParams();
@@ -39,18 +108,18 @@ export const Space = () => {
 
   useEffect(() => {
     const fetchSpaceData = async () => {
-      if (!spaceId) return;
+      if (!spaceId || !user?.id) return;
 
       try {
         const spaceResult = await desuite_backend.getSpace(spaceId);
         if ('ok' in spaceResult) {
-          const spaceData = spaceResult.ok;
+          const spaceData = transformSpace(spaceResult.ok);
           setSpace(spaceData);
-          setIsAdmin(spaceData.adminId === user?.id);
-          setIsMember(spaceData.members.includes(user?.id || ''));
+          setIsAdmin(spaceData.adminId === user.id);
+          setIsMember(spaceData.members.includes(user.id));
 
           const tasksResult = await desuite_backend.getSpaceTasks(spaceId);
-          setTasks(tasksResult);
+          setTasks(tasksResult.map(transformTask));
         }
       } catch (error) {
         console.error('Error fetching space data:', error);
@@ -63,11 +132,12 @@ export const Space = () => {
   }, [spaceId, user]);
 
   const handleJoinSpace = async () => {
-    if (!spaceId) return;
+    if (!spaceId || !user?.id) return;
     try {
       const result = await desuite_backend.joinSpace(spaceId);
       if ('ok' in result) {
-        setSpace(result.ok);
+        const transformedSpace = transformSpace(result.ok);
+        setSpace(transformedSpace);
         setIsMember(true);
       }
     } catch (error) {
@@ -80,7 +150,17 @@ export const Space = () => {
   );
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="animate-spin text-purple-500 mr-2">
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+        </div>
+        Loading...
+      </div>
+    );
   }
 
   if (!space) {
