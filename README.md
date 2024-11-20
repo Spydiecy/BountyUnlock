@@ -1,76 +1,76 @@
-# DeSuite
+# BountyUnlock
 
-## Your Decentralized Personal Productivity Suite
+## Your Decentralized Bounty and Task Management Platform
 
-![image](https://github.com/user-attachments/assets/465d9e22-2ba8-410c-a7fa-6c3df437b425)
+![Screenshot 2024-11-21 024210](https://github.com/user-attachments/assets/2093a962-178e-43f0-b107-21580d49dc17)
 
 ---
 
 ### Table of Contents
 1. [Introduction](#introduction)
 2. [Key Features](#key-features)
-3. [Why DfinityGuard?](#why-dfinityguard)
+3. [Why BountyUnlock?](#why-bountyunlock)
 4. [Technology Stack](#technology-stack)
+
 ---
 
 ### Introduction
 
-DfinityGuard is a revolutionary decentralized application built on the Internet Computer Protocol, offering a comprehensive suite of productivity tools designed to enhance your personal and professional life. By leveraging the power of blockchain technology, DfinityGuard ensures your data remains private, secure, and always accessible.
+![image](https://github.com/user-attachments/assets/ef5dd9de-661a-4d05-80e1-42cc63b0fe57)
+
+BountyUnlock is a revolutionary decentralized application built on the Internet Computer Protocol, offering a comprehensive platform for managing bounties, tasks, and collaborations. By leveraging the power of blockchain technology, BountyUnlock ensures your data remains private, secure, and always accessible.
 
 ---
 
 ### Key Features
 
-DfinityGuard brings together essential productivity tools in one seamless, decentralized platform:
+BountyUnlock brings together essential productivity tools in one seamless, decentralized platform:
 
-![image](https://github.com/user-attachments/assets/cc736516-ddc8-45fb-b4d5-169fe6f15c07)
+![image](https://github.com/user-attachments/assets/118b557c-14c2-4a6a-a08f-9b349aa0aa5f)
 
-1. **Task Manager**
-   - Create, organize, and prioritize tasks
-   - Set due dates and reminders
-   - Track progress with status updates
+1. **Bounty Management**
+   - Create, organize, and manage bounties for your projects
+   - Set bounty requirements, deadlines, and rewards
+   - Track submissions and review them with ease
 
-2. **Smart Calendar**
-   - View and manage events, tasks, and expenses in one place
-   - Sync across devices for up-to-date scheduling
-   - Intelligent suggestions for time management
+2. **Task Management**
+   - Assign and track tasks within your spaces
+   - Set task types, visibility, and submission requirements
+   - Manage task deadlines and submissions
 
-3. **File Storage**
-   - Securely store and organize documents
-   - Easy file sharing and collaboration
-   - Version control for important files
+3. **Space Collaboration**
+   - Create and join private or public spaces
+   - Invite members and manage space settings
+   - Share resources, tasks, and submissions within spaces
 
-4. **Expense Tracker**
-   - Log and categorize expenses
-   - Generate reports and visualizations
-   - Set budgets and receive alerts
+4. **User Reputation**
+   - Earn points and climb the leaderboard
+   - Showcase your achievements and skills
+   - Establish your credibility within the platform
 
-5. **Note-taking**
-   - Create rich-text notes with multimedia support
-   - Organize notes with tags and folders
-   - Seamless integration with tasks and calendar
-
-6. **Photo Gallery**
-   - Store and organize photos securely
-   - Create albums and slideshows
-   - Share photos with granular privacy controls
+5. **Secure Storage**
+   - Store and manage documents and files securely
+   - Collaborate on files with space members
+   - Maintain version control for important assets
 
 ---
 
-### Why DfinityGuard?
+### Why BountyUnlock?
+
+![image](https://github.com/user-attachments/assets/08681777-de1d-457b-bb95-8b806e328ac5)
 
 - **Decentralized Security**: Your data is stored on the blockchain, protected from central points of failure.
 - **Privacy-First**: You maintain full control over your information, with no third-party access.
 - **Seamless Integration**: All tools work together, providing a unified productivity experience.
 - **Always Accessible**: Access your data anytime, anywhere, without relying on centralized servers.
-- **Customizable**: Tailor the suite to your needs, using only the tools you want.
+- **Customizable**: Tailor the platform to your needs, using only the tools you want.
 - **Future-Proof**: Built on blockchain technology, ensuring longevity and continued innovation.
 
 ---
 
 ### Technology Stack
 
-DfinityGuard is built using cutting-edge technologies:
+BountyUnlock is built using cutting-edge technologies:
 
 - **Frontend**: React.js with TypeScript
 - **Backend**: Internet Computer Protocol (ICP) using Motoko
@@ -79,4 +79,4 @@ DfinityGuard is built using cutting-edge technologies:
 
 ---
 
-DfinityGuard - Empowering Your Productivity in a Decentralized World
+BountyUnlock - Unlocking the Potential of Decentralized Collaboration and Productivity
